@@ -1,22 +1,42 @@
-function getLocalStream() {
-    // Verifica si el elemento <audio> existe y créalo si no
-    if (!window.localAudio) {
-        window.localAudio = document.createElement("audio");
-        window.localAudio.id = "localAudio";
-        document.body.appendChild(window.localAudio);
-    }
+// Asegúrate de que el script se cargue correctamente
+window.addEventListener("load", () => {
+    const ws = new WebSocket("ws://wewiza.ddns.net:8089/ws/room"); // Cambia la URL si es necesario
 
-    // Solicita acceso al micrófono
+    ws.onopen = () => {
+        console.log("WebSocket connection established");
+    };
+
+    ws.onmessage = (message) => {
+        console.log("Message from server", message.data);
+    };
+
+    ws.onerror = (error) => {
+        console.error("WebSocket error", error);
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket connection closed");
+    };
+
+    // Obtener el flujo de audio del micrófono
     navigator.mediaDevices
-        .getUserMedia({ video: false, audio: true })
+        .getUserMedia({ audio: true })
         .then((stream) => {
-            window.localStream = stream; // Guarda el stream en window.localStream
-            window.localAudio.srcObject = stream; // Asigna el stream al elemento <audio>
-            window.localAudio.autoplay = true; // Reproduce el audio automáticamente
+            const mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = function (event) {
+                if (event.data.size > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function () {
+                        ws.send(reader.result); // Envía datos a través de WebSocket
+                    };
+                    reader.readAsArrayBuffer(event.data);
+                }
+            };
+
+            mediaRecorder.start(100); // Graba en fragmentos de 100 ms
         })
         .catch((err) => {
-            console.error(`you got an error: ${err}`);
+            console.error("Failed to get user media", err);
         });
-}
-
-getLocalStream();
+});
