@@ -1,42 +1,41 @@
-// Asegúrate de que el script se cargue correctamente
-window.addEventListener("load", () => {
-    const ws = new WebSocket("ws://wewiza.ddns.net:8089/ws/room"); // Cambia la URL si es necesario
+let ws;
 
-    ws.onopen = () => {
-        console.log("WebSocket connection established");
+function connectWebSocket(roomId) {
+    ws = new WebSocket(`ws://wewiza.ddns.net:8089/ws/${roomId}`);
+
+    ws.onopen = function () {
+        console.log("WebSocket is open.");
     };
 
-    ws.onmessage = (message) => {
-        console.log("Message from server", message.data);
+    ws.onmessage = function (event) {
+        console.log("Message from server: ", event.data);
     };
 
-    ws.onerror = (error) => {
-        console.error("WebSocket error", error);
+    ws.onclose = function (event) {
+        console.log("WebSocket is closed. Reconnecting...", event.reason);
+        setTimeout(() => connectWebSocket(roomId), 5000); // Reconnect after 5 seconds
     };
 
-    ws.onclose = () => {
-        console.log("WebSocket connection closed");
+    ws.onerror = function (error) {
+        console.error("WebSocket Error: ", error);
+    };
+}
+
+function handleData(data) {
+    const reader = new FileReader();
+
+    reader.onload = function () {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(reader.result); // Send data through WebSocket
+        } else {
+            console.warn("WebSocket is not open. Ready state:", ws.readyState);
+        }
     };
 
-    // Obtener el flujo de audio del micrófono
-    navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-            const mediaRecorder = new MediaRecorder(stream);
+    reader.readAsArrayBuffer(data); // Read data as ArrayBuffer
+}
 
-            mediaRecorder.ondataavailable = function (event) {
-                if (event.data.size > 0) {
-                    const reader = new FileReader();
-                    reader.onload = function () {
-                        ws.send(reader.result); // Envía datos a través de WebSocket
-                    };
-                    reader.readAsArrayBuffer(event.data);
-                }
-            };
-
-            mediaRecorder.start(100); // Graba en fragmentos de 100 ms
-        })
-        .catch((err) => {
-            console.error("Failed to get user media", err);
-        });
-});
+// Esta función se llamará después de generar la sala
+function onRoomGenerated(roomId) {
+    connectWebSocket(roomId);
+}
