@@ -1,6 +1,6 @@
 {
-    "name": "guest_translator",
-    "short_name": "guest_translator",
+    "name": "argos_translate",
+    "short_name": "argos_translate",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
