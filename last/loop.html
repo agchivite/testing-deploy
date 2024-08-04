@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <base href="./" />
+        <meta charset="UTF-8" />
+        <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+        <meta name="description" content="A new Flutter project." />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <meta name="apple-mobile-web-app-title" content="argos_translate" />
+        <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+        <link rel="icon" type="image/png" href="favicon.png" />
+        <title>argos_translate</title>
+        <link rel="manifest" href="manifest.json" />
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (!("webkitSpeechRecognition" in window)) {
+                    alert("¡API de reconocimiento de voz no soportada!");
+                    return;
+                }
+
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = false;
+                recognition.lang = "en-US"; // Puedes cambiar el idioma según sea necesario
+
+                recognition.onstart = function () {
+                    console.log("Escuchando...");
+                };
+
+                recognition.onerror = function (event) {
+                    console.error("Error en el reconocimiento: ", event.error);
+                };
+
+                recognition.onend = function () {
+                    console.log("Detenido");
+                    recognition.start(); // Reiniciar el reconocimiento para escuchar continuamente
+                };
+
+                recognition.onresult = function (event) {
+                    const lastResult = event.results[event.results.length - 1];
+                    const text = lastResult[0].transcript.trim();
+                    console.log("Texto reconocido: ", text);
+                    sendTextToTranslate(text);
+                };
+
+                recognition.start();
+
+                function sendTextToTranslate(text) {
+                    const lang = "es"; // Idioma al que se quiere traducir
+                    fetch(
+                        `http://wewiza.ddns.net:8089/translate/${lang}?text=${encodeURIComponent(
+                            text
+                        )}`
+                    )
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.error) {
+                                console.error(
+                                    "Error en la traducción: ",
+                                    data.error
+                                );
+                            } else {
+                                console.log(
+                                    "Texto traducido: ",
+                                    data.translated_text
+                                );
+                                displayTranslatedText(data.translated_text);
+                            }
+                        })
+                        .catch((error) =>
+                            console.error("Error en la petición: ", error)
+                        );
+                }
+
+                function displayTranslatedText(text) {
+                    const translatedTextElement =
+                        document.getElementById("translatedText");
+                    translatedTextElement.innerText = text;
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <h1>Reconocimiento de voz y traducción</h1>
+        <div id="translatedText">Texto traducido aparecerá aquí</div>
+    </body>
+</html>
