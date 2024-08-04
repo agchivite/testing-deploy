@@ -12,7 +12,7 @@ function getLocalStream() {
         .then((stream) => {
             window.localStream = stream; // Guarda el stream en window.localStream
             window.localAudio.srcObject = stream; // Asigna el stream al elemento <audio>
-            window.localAudio.autoplay = true; // Reproduce el audio automáticamente
+            //window.localAudio.autoplay = true; // Reproduce el audio automáticamente
         })
         .catch((err) => {
             console.error(`you got an error: ${err}`);
